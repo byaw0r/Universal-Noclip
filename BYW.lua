@@ -9,12 +9,12 @@ screenGui.ResetOnSpawn = false
 
 local noclipBtn = Instance.new("TextButton")
 noclipBtn.Name = "NoclipBtn"
-noclipBtn.Size = UDim2.new(0, 50, 0, 50)
+noclipBtn.Size = UDim2.new(0, 40, 0, 40)
 noclipBtn.Position = UDim2.new(0, 10, 0, 10)
 noclipBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 noclipBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
 noclipBtn.Text = "B"
-noclipBtn.TextSize = 24
+noclipBtn.TextSize = 28
 noclipBtn.Font = Enum.Font.GothamBold
 noclipBtn.BorderSizePixel = 0
 noclipBtn.Active = true
