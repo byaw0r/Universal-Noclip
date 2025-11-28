@@ -25,6 +25,61 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 12)
 UICorner.Parent = noclipBtn
 
+-- Функция для получения всех коллизионных частей персонажа
+local function getCollisionParts(character)
+    local parts = {}
+    
+    -- Основные части для R6
+    local r6Parts = {
+        "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"
+    }
+    
+    -- Основные части для R15
+    local r15Parts = {
+        "Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "LeftLowerArm", "LeftHand",
+        "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", 
+        "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot", "HumanoidRootPart"
+    }
+    
+    -- Проверяем тип аватара
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        if humanoid.RigType == Enum.HumanoidRigType.R15 then
+            for _, partName in pairs(r15Parts) do
+                local part = character:FindFirstChild(partName)
+                if part and part:IsA("BasePart") then
+                    table.insert(parts, part)
+                end
+            end
+        else
+            -- R6 или другие типы
+            for _, partName in pairs(r6Parts) do
+                local part = character:FindFirstChild(partName)
+                if part and part:IsA("BasePart") then
+                    table.insert(parts, part)
+                end
+            end
+        end
+    end
+    
+    -- Добавляем HumanoidRootPart если его еще нет
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if rootPart and rootPart:IsA("BasePart") then
+        local alreadyAdded = false
+        for _, part in pairs(parts) do
+            if part == rootPart then
+                alreadyAdded = true
+                break
+            end
+        end
+        if not alreadyAdded then
+            table.insert(parts, rootPart)
+        end
+    end
+    
+    return parts
+end
+
 local function updateNoclipButton()
     if noclipEnabled then
         noclipBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- Зеленый при вкл
@@ -43,34 +98,36 @@ local function disableNoclip()
             noclipConnection = nil
         end
         
+        -- Восстанавливаем коллизию с правильной логикой
         local player = game.Players.LocalPlayer
         local character = player.Character
         if character then
-        
-            wait(0.1)
+            -- Ждем немного перед восстановлением
+            wait(0.05)
             
-            local mainParts = {
-                "Head",
-                "Torso", 
-                "UpperTorso",
-                "LowerTorso",
-                "Left Arm",
-                "Right Arm", 
-                "Left Leg",
-                "Right Leg",
-                "HumanoidRootPart"
-            }
+            -- Получаем только основные коллизионные части
+            local collisionParts = getCollisionParts(character)
             
-            for _, partName in pairs(mainParts) do
-                local part = character:FindFirstChild(partName)
-                if part and part:IsA("BasePart") then
+            -- Восстанавливаем коллизию только для основных частей
+            for _, part in pairs(collisionParts) do
+                if part:IsA("BasePart") then
                     part.CanCollide = true
                 end
             end
             
+            -- Для всех остальных частей (аксессуары и т.д.) оставляем коллизию выключенной
             for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") and not table.find(mainParts, part.Name) then
-                    part.CanCollide = false
+                if part:IsA("BasePart") then
+                    local isMainPart = false
+                    for _, mainPart in pairs(collisionParts) do
+                        if part == mainPart then
+                            isMainPart = true
+                            break
+                        end
+                    end
+                    if not isMainPart then
+                        part.CanCollide = false
+                    end
                 end
             end
         end
@@ -86,6 +143,7 @@ local function enableNoclip()
             local player = game.Players.LocalPlayer
             local character = player.Character
             if character and noclipEnabled then
+                -- Отключаем коллизию для всех частей
                 for _, part in pairs(character:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.CanCollide = false
@@ -105,8 +163,10 @@ local function toggleNoclip()
     end
 end
 
+-- Подключение кнопки
 noclipBtn.MouseButton1Click:Connect(toggleNoclip)
 
+-- Бинд клавиши N для ПК
 game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end -- Игнорируем если в чате и т.д.
     
@@ -115,9 +175,11 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gameProce
     end
 end)
 
+-- Обработка перерождения персонажа
 game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
     character:WaitForChild("HumanoidRootPart")
     
+    -- При перерождении всегда выключаем noclip
     if noclipEnabled then
         noclipEnabled = false
         if noclipConnection then
