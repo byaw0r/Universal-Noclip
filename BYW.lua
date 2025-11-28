@@ -1,4 +1,4 @@
---BYW SCRIPT
+--BYW SCRIPIT
 local noclipEnabled = false
 local noclipConnection
 
@@ -46,6 +46,7 @@ local function disableNoclip()
         local player = game.Players.LocalPlayer
         local character = player.Character
         if character then
+        
             wait(0.1)
             
             local mainParts = {
@@ -105,6 +106,14 @@ local function toggleNoclip()
 end
 
 noclipBtn.MouseButton1Click:Connect(toggleNoclip)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end -- Игнорируем если в чате и т.д.
+    
+    if input.KeyCode == Enum.KeyCode.N then
+        toggleNoclip()
+    end
+end)
 
 game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
     character:WaitForChild("HumanoidRootPart")
